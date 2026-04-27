@@ -169,3 +169,17 @@ function Nav({ tab, setTab }) {
     </div>
   );
 }
+import { TEAM_LOGOS } from "./API";
+
+function TeamRow({ team }) {
+  return (
+    <div className="team-row">
+      <img
+        src={TEAM_LOGOS[team] || ""}
+        alt={team}
+        style={{ width: 28, height: 28, marginRight: 8 }}
+      />
+      <span>{team}</span>
+    </div>
+  );
+}

@@ -40,3 +40,15 @@ export function formatGameTime(game) {
     minute: "2-digit"
   });
 }
+export function getGameDisplayTime(game) {
+  if (!game?.gameDate) return "TBD";
+
+  const now = new Date();
+  const start = new Date(game.gameDate);
+
+  if (start > now) {
+    return `Starts ${formatGameTime(game)}`;
+  }
+
+  return formatGameTime(game);
+}

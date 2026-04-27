@@ -27,3 +27,16 @@ export async function getBoxScore(gamePk) {
 
   return await res.json();
 }
+export function formatGameTime(game) {
+  if (!game?.gameDate) return "TBD";
+
+  const date = new Date(game.gameDate);
+
+  // if invalid date fallback
+  if (isNaN(date.getTime())) return "TBD";
+
+  return date.toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit"
+  });
+}

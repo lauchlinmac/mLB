@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { TEAM_LOGOS } from "./API";
+import { TEAM_LOGOS } from "./teams";
 
 export default function App() {
   const [games, setGames] = useState([]);
 
   useEffect(() => {
     fetchGames();
-    const interval = setInterval(fetchGames, 30000); // live refresh
+    const interval = setInterval(fetchGames, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -17,19 +17,23 @@ export default function App() {
       const data = await res.json();
       setGames(data.games || []);
     } catch (err) {
-      console.error(err);
+      console.error("Fetch error:", err);
     }
   }
 
-  function Team({ name }) {
+  function Team({ name, color }) {
+    const logo = TEAM_LOGOS[name];
+
     return (
       <div className="flex items-center gap-2">
-        <img
-          src={TEAM_LOGOS[name]}
-          className="w-7 h-7 drop-shadow-[0_0_6px_rgba(255,255,255,0.3)]"
-          alt={name}
-          onError={(e) => (e.target.style.display = "none")}
-        />
+        {logo && (
+          <img
+            src={logo}
+            alt={name}
+            className="w-7 h-7 drop-shadow-[0_0_6px_rgba(255,255,255,0.25)]"
+            onError={(e) => (e.target.style.display = "none")}
+          />
+        )}
         <span className="text-sm font-medium">{name}</span>
       </div>
     );
@@ -37,10 +41,11 @@ export default function App() {
 
   function LiveDot({ isLive }) {
     if (!isLive) return null;
+
     return (
       <span className="relative flex h-2 w-2">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+        <span className="animate-ping absolute h-full w-full rounded-full bg-red-500 opacity-75"></span>
+        <span className="relative h-2 w-2 rounded-full bg-red-600"></span>
       </span>
     );
   }
@@ -74,7 +79,7 @@ export default function App() {
           </span>
         </div>
 
-        {/* VS Divider */}
+        {/* Divider */}
         <div className="text-center text-gray-600 text-xs my-1">
           ● ● ●
         </div>
@@ -87,16 +92,14 @@ export default function App() {
           </span>
         </div>
 
-        {/* Status Bar */}
+        {/* Status */}
         <div className="mt-3 text-xs">
           {isLive ? (
             <div className="text-green-400 animate-pulse">
-              ● Scoring activity / Live action updating
+              ● Live action updating
             </div>
           ) : (
-            <div className="text-gray-500">
-              Scheduled game
-            </div>
+            <div className="text-gray-500">Scheduled game</div>
           )}
         </div>
       </motion.div>
@@ -105,7 +108,6 @@ export default function App() {
 
   return (
     <div className="bg-black min-h-screen text-white p-4">
-      {/* Header */}
       <h1 className="text-2xl font-bold mb-3 tracking-wide">
         ⚾ MLB Beast Mode Live
       </h1>
@@ -114,7 +116,6 @@ export default function App() {
         Swipe → for more games
       </p>
 
-      {/* Swipeable Row */}
       <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4">
         {games.map((game, i) => (
           <GameCard key={i} game={game} />

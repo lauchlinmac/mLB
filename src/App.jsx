@@ -41,26 +41,40 @@ function Header() {
 }
 
 // ⚾ LIVE SCORES
+import { formatGameTime, timeUntilGame } from "./api";
+
 function Scores({ games }) {
   return (
     <div className="section">
       <h2>LIVE GAMES</h2>
 
+      {games.length === 0 && (
+        <div className="card">Loading games...</div>
+      )}
+
       {games.map((g) => (
         <div key={g.gamePk} className="card">
+
+          {/* Teams */}
           <div className="teams">
             {g.teams.away.team.name} @ {g.teams.home.team.name}
           </div>
 
+          {/* Status */}
           <div className="score live">
             {g.status.detailedState}
           </div>
+
+          {/* NEW: Time Intelligence */}
+          <div className="muted">
+            ⏰ {timeUntilGame(g)} • {formatGameTime(g)}
+          </div>
+
         </div>
       ))}
     </div>
   );
 }
-
 // ⭐ FAVORITES (placeholder foundation)
 function Favorites() {
   return (

@@ -1,0 +1,90 @@
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: system-ui;
+}
+
+.app {
+  padding-bottom: 70px;
+}
+
+/* HEADER */
+.header {
+  padding: 16px;
+  border-bottom: 1px solid #222;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.sub {
+  font-size: 12px;
+  color: #888;
+}
+
+/* SECTIONS */
+.section {
+  padding: 12px;
+}
+
+h2 {
+  font-size: 13px;
+  color: #aaa;
+}
+
+/* CARDS */
+.card {
+  background: #111;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  border: 1px solid #222;
+  transition: transform 0.15s ease;
+}
+
+.card:active {
+  transform: scale(0.98);
+}
+
+.teams {
+  font-weight: 600;
+}
+
+.score {
+  margin-top: 6px;
+  color: #ff3b3b;
+}
+
+/* LIVE PULSE */
+.live {
+  animation: pulse 1.2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+/* NAV */
+.nav {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  background: #000;
+  border-top: 1px solid #222;
+}
+
+.nav button {
+  flex: 1;
+  padding: 14px;
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 12px;
+}

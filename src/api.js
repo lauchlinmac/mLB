@@ -1,13 +1,21 @@
 const BASE = "https://statsapi.mlb.com/api/v1";
 
 /* =========================
-   📅 SCHEDULE
+   📅 DATE HELPERS
 ========================= */
-export async function getScheduleByDate(offset = 0) {
+
+function getDate(offset = 0) {
   const d = new Date();
   d.setDate(d.getDate() + offset);
+  return d.toISOString().split("T")[0];
+}
 
-  const date = d.toISOString().split("T")[0];
+/* =========================
+   ⚾ GAMES BY DATE
+========================= */
+
+export async function getScheduleByDate(offset = 0) {
+  const date = getDate(offset);
 
   const res = await fetch(
     `${BASE}/schedule?sportId=1&date=${date}`
@@ -18,8 +26,9 @@ export async function getScheduleByDate(offset = 0) {
 }
 
 /* =========================
-   📊 BOX SCORE DATA
+   📊 BOX SCORE
 ========================= */
+
 export async function getBoxScore(gamePk) {
   const res = await fetch(
     `${BASE}/game/${gamePk}/boxscore`
@@ -27,12 +36,15 @@ export async function getBoxScore(gamePk) {
 
   return await res.json();
 }
+
+/* =========================
+   ⏰ TIME FORMATTERS (FIXED)
+========================= */
+
 export function formatGameTime(game) {
   if (!game?.gameDate) return "TBD";
 
   const date = new Date(game.gameDate);
-
-  // if invalid date fallback
   if (isNaN(date.getTime())) return "TBD";
 
   return date.toLocaleTimeString([], {
@@ -40,6 +52,7 @@ export function formatGameTime(game) {
     minute: "2-digit"
   });
 }
+
 export function getGameDisplayTime(game) {
   if (!game?.gameDate) return "TBD";
 

@@ -1,69 +1,133 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from "react";
+import { getSchedule, getStandings } from "./api";
 
 export default function App() {
-  const [games, setGames] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [query, setQuery] = useState('')
-  const [updated, setUpdated] = useState('')
-
-  const today = new Date().toISOString().split('T')[0]
+  const [tab, setTab] = useState("scores");
+  const [games, setGames] = useState([]);
 
   useEffect(() => {
-    const load = () => {
-      fetch(
-        `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${today}&hydrate=team,linescore,venue`
-      )
-        .then(r => r.json())
-        .then(d => {
-          setGames(d.dates?.[0]?.games || [])
-          setLoading(false)
-          setUpdated(new Date().toLocaleTimeString())
-        })
-        .catch(() => setLoading(false))
-    }
+    load();
+    const interval = setInterval(load, 20000);
+    return () => clearInterval(interval);
+  }, []);
 
-    load()
-    const t = setInterval(load, 10000)
-    return () => clearInterval(t)
-  }, [])
-
-  const filtered = useMemo(() => {
-    return games.filter(g =>
-      `${g.teams.away.team.name} ${g.teams.home.team.name}`
-        .toLowerCase()
-        .includes(query.toLowerCase())
-    )
-  }, [games, query])
+  async function load() {
+    const data = await getSchedule();
+    setGames(data);
+  }
 
   return (
-    <div style={{ padding: 16, background: '#000', minHeight: '100vh' }}>
-      <h1>Diamond Beast v4 OMEGA</h1>
-      <p>ESPN Killer Mode • Live MLB</p>
+    <div className="app">
+      <Header />
 
-      <input
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-        placeholder="Search teams, players, odds, weather..."
-        style={{ width: '100%', padding: 10, marginBottom: 10 }}
-      />
+      {tab === "scores" && <Scores games={games} />}
+      {tab === "favorites" && <Favorites />}
+      {tab === "standings" && <Standings />}
+      {tab === "beast" && <Beast games={games} />}
 
-      <p>Last updated: {updated || 'Loading...'}</p>
+      <Nav tab={tab} setTab={setTab} />
+    </div>
+  );
+}
 
-      {loading && <p>Loading games...</p>}
+// 🧠 HEADER
+function Header() {
+  return (
+    <div className="header">
+      <div className="title">SOLO BEAST</div>
+      <div className="sub">Live MLB Intelligence</div>
+    </div>
+  );
+}
 
-      {filtered.map(g => (
-        <div key={g.gamePk} style={{ border: '1px solid #333', padding: 12, marginTop: 10 }}>
-          <div>{g.status?.detailedState}</div>
-          <div>{g.venue?.name}</div>
+// ⚾ LIVE SCORES
+function Scores({ games }) {
+  return (
+    <div className="section">
+      <h2>LIVE GAMES</h2>
 
-          <div>
-            {g.teams.away.team.name} — {g.teams.away.score ?? '-'}
+      {games.map((g) => (
+        <div key={g.gamePk} className="card">
+          <div className="teams">
+            {g.teams.away.team.name} @ {g.teams.home.team.name}
           </div>
-          <div>
-            {g.teams.home.team.name} — {g.teams.home.score ?? '-'}
+
+          <div className="score live">
+            {g.status.detailedState}
           </div>
         </div>
       ))}
     </div>
-  )
+  );
+}
+
+// ⭐ FAVORITES (placeholder foundation)
+function Favorites() {
+  return (
+    <div className="section">
+      <h2>FAVORITES</h2>
+      <div className="card">Favorite teams coming next upgrade</div>
+    </div>
+  );
+}
+
+// 📊 STANDINGS
+function Standings() {
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function load() {
+    const res = await getStandings();
+    setData(res);
+  }
+
+  return (
+    <div className="section">
+      <h2>STANDINGS</h2>
+
+      {data.slice(0, 2).map((league) => (
+        <div key={league.league.id} className="card">
+          <strong>{league.league.name}</strong>
+
+          {league.teamRecords.slice(0, 5).map((t) => (
+            <div key={t.team.id}>
+              {t.team.name} — {t.wins}-{t.losses}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// 🔥 BEAST MODE CENTER
+function Beast({ games }) {
+  return (
+    <div className="section">
+      <h2>BEAST MODE</h2>
+
+      <div className="card">
+        Active Games: {games.length}
+      </div>
+
+      <div className="card">
+        System Status: LIVE
+      </div>
+    </div>
+  );
+}
+
+// 📱 NAV BAR
+function Nav({ tab, setTab }) {
+  return (
+    <div className="nav">
+      <button onClick={() => setTab("scores")}>Scores</button>
+      <button onClick={() => setTab("favorites")}>Fav</button>
+      <button onClick={() => setTab("standings")}>Stand</button>
+      <button onClick={() => setTab("beast")}>Beast</button>
+    </div>
+  );
 }

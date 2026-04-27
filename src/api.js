@@ -1,21 +1,13 @@
 const BASE = "https://statsapi.mlb.com/api/v1";
 
 /* =========================
-   📅 DATE HELPERS
+   📅 SCHEDULE
 ========================= */
-
-function getDate(offset = 0) {
+export async function getScheduleByDate(offset = 0) {
   const d = new Date();
   d.setDate(d.getDate() + offset);
-  return d.toISOString().split("T")[0];
-}
 
-/* =========================
-   ⚾ GAMES BY DATE
-========================= */
-
-export async function getScheduleByDate(offset = 0) {
-  const date = getDate(offset);
+  const date = d.toISOString().split("T")[0];
 
   const res = await fetch(
     `${BASE}/schedule?sportId=1&date=${date}`
@@ -26,14 +18,12 @@ export async function getScheduleByDate(offset = 0) {
 }
 
 /* =========================
-   📊 STANDINGS
+   📊 BOX SCORE DATA
 ========================= */
-
-export async function getStandings() {
+export async function getBoxScore(gamePk) {
   const res = await fetch(
-    `${BASE}/standings?leagueId=103,104&season=2026`
+    `${BASE}/game/${gamePk}/boxscore`
   );
 
-  const data = await res.json();
-  return data.records || [];
+  return await res.json();
 }

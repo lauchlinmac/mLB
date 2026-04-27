@@ -1,19 +1,19 @@
 import { useEffect, useState } from "react";
-import { getScheduleByDate, getStandings } from "./api";
+import { getScheduleByDate, getBoxScore } from "./api";
 
 export default function App() {
   const [tab, setTab] = useState("scores");
-  const [dayOffset, setDayOffset] = useState(0);
+  const [offset, setOffset] = useState(0);
   const [games, setGames] = useState([]);
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 20000);
-    return () => clearInterval(interval);
-  }, [dayOffset]);
+    const t = setInterval(load, 20000);
+    return () => clearInterval(t);
+  }, [offset]);
 
   async function load() {
-    const data = await getScheduleByDate(dayOffset);
+    const data = await getScheduleByDate(offset);
     setGames(data);
   }
 
@@ -24,117 +24,119 @@ export default function App() {
       {tab === "scores" && (
         <Scores
           games={games}
-          dayOffset={dayOffset}
-          setDayOffset={setDayOffset}
+          offset={offset}
+          setOffset={setOffset}
         />
       )}
 
-      {tab === "favorites" && <Favorites />}
-      {tab === "standings" && <Standings />}
-      {tab === "beast" && <Beast games={games} />}
+      {tab === "favorites" && <Placeholder title="Favorites" />}
+      {tab === "standings" && <Placeholder title="Standings" />}
+      {tab === "beast" && <Placeholder title="Beast Mode" />}
 
       <Nav tab={tab} setTab={setTab} />
     </div>
   );
 }
 
-/* =========================
-   HEADER
-========================= */
-
+/* ================= HEADER ================= */
 function Header() {
   return (
     <div className="header">
       <div className="title">SOLO BEAST</div>
-      <div className="sub">MLB Timeline Intelligence</div>
+      <div className="sub">MLB Command Center</div>
     </div>
   );
 }
 
-/* =========================
-   ⚾ SCORES + DAY NAV
-========================= */
+/* ================= SCORES ================= */
+function Scores({ games, offset, setOffset }) {
+  const [box, setBox] = useState(null);
 
-function Scores({ games, dayOffset, setDayOffset }) {
+  async function openBox(gamePk) {
+    const data = await getBoxScore(gamePk);
+    setBox(data);
+  }
+
   const label =
-    dayOffset === 0 ? "TODAY" :
-    dayOffset === -1 ? "YESTERDAY" :
-    dayOffset === 1 ? "TOMORROW" :
-    `DAY ${dayOffset}`;
+    offset === 0 ? "TODAY" :
+    offset === -1 ? "YESTERDAY" :
+    offset === 1 ? "TOMORROW" :
+    `DAY ${offset}`;
 
   return (
     <div className="section">
 
-      {/* DAY SWITCHER */}
-      <div className="card">
-        <div className="row">
-          <button onClick={() => setDayOffset(dayOffset - 1)}>
-            ⬅️
-          </button>
-
-          <strong>{label}</strong>
-
-          <button onClick={() => setDayOffset(dayOffset + 1)}>
-            ➡️
-          </button>
-        </div>
+      {/* DAY SWITCH */}
+      <div className="card row">
+        <button onClick={() => setOffset(offset - 1)}>⬅️</button>
+        <strong>{label}</strong>
+        <button onClick={() => setOffset(offset + 1)}>➡️</button>
       </div>
 
       {/* GAMES */}
-      {games.length === 0 && (
-        <div className="card">No games found</div>
-      )}
-
       {games.map((g) => (
-        <div key={g.gamePk} className="card">
+        <div
+          key={g.gamePk}
+          className="card"
+          onClick={() => openBox(g.gamePk)}
+        >
           <div className="teams">
             {g.teams.away.team.name} @ {g.teams.home.team.name}
           </div>
 
-          <div className="score live">
+          <div className="score">
+            {g.teams.away.score ?? 0} - {g.teams.home.score ?? 0}
+          </div>
+
+          <div className="muted">
             {g.status.detailedState}
           </div>
         </div>
       ))}
+
+      {box && <BoxPanel box={box} onClose={() => setBox(null)} />}
     </div>
   );
 }
 
-/* =========================
-   PLACEHOLDERS
-========================= */
+/* ================= BOX SCORE ================= */
+function BoxPanel({ box, onClose }) {
+  const t = box.teams;
 
-function Favorites() {
+  return (
+    <div className="boxPanel">
+      <button className="close" onClick={onClose}>✕</button>
+
+      <h3>BOX SCORE</h3>
+
+      <div className="card">
+        <strong>{t.away.team.name}</strong>
+        <div>R: {t.away.teamStats.batting.runs}</div>
+        <div>H: {t.away.teamStats.batting.hits}</div>
+        <div>E: {t.away.teamStats.fielding.errors}</div>
+      </div>
+
+      <div className="card">
+        <strong>{t.home.team.name}</strong>
+        <div>R: {t.home.teamStats.batting.runs}</div>
+        <div>H: {t.home.teamStats.batting.hits}</div>
+        <div>E: {t.home.teamStats.fielding.errors}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ================= PLACEHOLDERS ================= */
+function Placeholder({ title }) {
   return (
     <div className="section">
-      <h2>FAVORITES</h2>
+      <h2>{title}</h2>
       <div className="card">Coming next upgrade</div>
     </div>
   );
 }
 
-function Standings() {
-  return (
-    <div className="section">
-      <h2>STANDINGS</h2>
-      <div className="card">Coming next upgrade</div>
-    </div>
-  );
-}
-
-function Beast({ games }) {
-  return (
-    <div className="section">
-      <h2>BEAST MODE</h2>
-      <div className="card">Games loaded: {games.length}</div>
-    </div>
-  );
-}
-
-/* =========================
-   NAV
-========================= */
-
+/* ================= NAV ================= */
 function Nav({ tab, setTab }) {
   return (
     <div className="nav">

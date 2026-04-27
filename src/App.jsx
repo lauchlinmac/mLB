@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getScheduleByDate, getBoxScore } from "./api";
+import { getGameDisplayTime } from "./api";
 
 export default function App() {
   const [tab, setTab] = useState("scores");
@@ -147,3 +148,7 @@ function Nav({ tab, setTab }) {
     </div>
   );
 }
+
+<div className="muted">
+  ⏰ {getGameDisplayTime(g)}
+</div>

@@ -1,185 +1,77 @@
 import { useEffect, useState } from "react";
-import {
-  getScheduleByDate,
-  getBoxScore,
-  getGameDisplayTime
-} from "./api";
+import { TEAM_LOGOS } from "./API";
 
 export default function App() {
-  const [tab, setTab] = useState("scores");
-  const [offset, setOffset] = useState(0);
   const [games, setGames] = useState([]);
 
   useEffect(() => {
-    load();
-    const t = setInterval(load, 20000);
-    return () => clearInterval(t);
-  }, [offset]);
+    fetchGames();
+  }, []);
 
-  async function load() {
-    const data = await getScheduleByDate(offset);
-    setGames(data);
+  async function fetchGames() {
+    try {
+      const res = await fetch("https://your-api-endpoint-here");
+      const data = await res.json();
+      setGames(data.games || []);
+    } catch (err) {
+      console.error("Failed to load games:", err);
+    }
   }
 
-  return (
-    <div className="app">
-      <Header />
-
-      {tab === "scores" && (
-        <Scores
-          games={games}
-          offset={offset}
-          setOffset={setOffset}
+  function Team({ name }) {
+    return (
+      <div className="flex items-center gap-2">
+        <img
+          src={TEAM_LOGOS[name]}
+          alt={name}
+          className="w-6 h-6 object-contain"
+          onError={(e) => (e.target.style.display = "none")}
         />
-      )}
-
-      {tab === "favorites" && <Placeholder title="Favorites" />}
-      {tab === "standings" && <Placeholder title="Standings" />}
-      {tab === "beast" && <Placeholder title="Beast Mode" />}
-
-      <Nav tab={tab} setTab={setTab} />
-    </div>
-  );
-}
-
-/* ================= HEADER ================= */
-
-function Header() {
-  return (
-    <div className="header">
-      <div className="title">SOLO BEAST</div>
-      <div className="sub">MLB Live Command Center</div>
-    </div>
-  );
-}
-
-/* ================= SCORES ================= */
-
-function Scores({ games, offset, setOffset }) {
-  const [box, setBox] = useState(null);
-
-  async function openBox(gamePk) {
-    const data = await getBoxScore(gamePk);
-    setBox(data);
+        <span>{name}</span>
+      </div>
+    );
   }
 
-  const label =
-    offset === 0 ? "TODAY" :
-    offset === -1 ? "YESTERDAY" :
-    offset === 1 ? "TOMORROW" :
-    `DAY ${offset}`;
+  function GameCard({ game }) {
+    return (
+      <div className="bg-gray-900 text-white p-4 rounded-xl shadow-md mb-3">
+        {/* Away Team */}
+        <div className="flex justify-between items-center mb-2">
+          <Team name={game.awayTeam} />
+          <span className="font-bold">
+            {game.awayScore ?? "-"}
+          </span>
+        </div>
+
+        {/* Home Team */}
+        <div className="flex justify-between items-center">
+          <Team name={game.homeTeam} />
+          <span className="font-bold">
+            {game.homeScore ?? "-"}
+          </span>
+        </div>
+
+        {/* Status / Time */}
+        <div className="text-xs text-gray-400 mt-2">
+          {game.status === "LIVE"
+            ? `🔴 Live • ${game.inning || ""}`
+            : game.gameTime || "Scheduled"}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="section">
+    <div className="p-4 max-w-md mx-auto">
+      <h1 className="text-xl font-bold mb-4">MLB Live Scores</h1>
 
-      {/* DAY NAV */}
-      <div className="card row">
-        <button onClick={() => setOffset(offset - 1)}>⬅️</button>
-        <strong>{label}</strong>
-        <button onClick={() => setOffset(offset + 1)}>➡️</button>
-      </div>
-
-      {/* GAMES */}
-      {games.length === 0 && (
-        <div className="card">No games found</div>
+      {games.length === 0 ? (
+        <div className="text-gray-400">Loading games...</div>
+      ) : (
+        games.map((game, idx) => (
+          <GameCard key={idx} game={game} />
+        ))
       )}
-
-      {games.map((g) => {
-        const isFuture = new Date(g.gameDate) > new Date();
-
-        return (
-          <div
-            key={g.gamePk}
-            className={`card ${isFuture ? "future" : ""}`}
-            onClick={() => openBox(g.gamePk)}
-          >
-            <div className="teams">
-              {g.teams.away.team.name} @ {g.teams.home.team.name}
-            </div>
-
-            {/* SCORES (FIXED) */}
-            <div className="score">
-              {g.teams.away.score ?? 0} - {g.teams.home.score ?? 0}
-            </div>
-
-            {/* TIME (FIXED FUTURE HANDLING) */}
-            <div className="muted">
-              ⏰ {getGameDisplayTime(g)}
-            </div>
-          </div>
-        );
-      })}
-
-      {/* BOX SCORE MODAL */}
-      {box && (
-        <BoxPanel box={box} onClose={() => setBox(null)} />
-      )}
-    </div>
-  );
-}
-
-/* ================= BOX SCORE ================= */
-
-function BoxPanel({ box, onClose }) {
-  const t = box.teams;
-
-  return (
-    <div className="boxPanel">
-      <button className="close" onClick={onClose}>✕</button>
-
-      <h3>BOX SCORE</h3>
-
-      <div className="card">
-        <strong>{t.away.team.name}</strong>
-        <div>Runs: {t.away.teamStats.batting.runs}</div>
-        <div>Hits: {t.away.teamStats.batting.hits}</div>
-        <div>Errors: {t.away.teamStats.fielding.errors}</div>
-      </div>
-
-      <div className="card">
-        <strong>{t.home.team.name}</strong>
-        <div>Runs: {t.home.teamStats.batting.runs}</div>
-        <div>Hits: {t.home.teamStats.batting.hits}</div>
-        <div>Errors: {t.home.teamStats.fielding.errors}</div>
-      </div>
-    </div>
-  );
-}
-
-/* ================= PLACEHOLDERS ================= */
-
-function Placeholder({ title }) {
-  return (
-    <div className="section">
-      <h2>{title}</h2>
-      <div className="card">Coming next upgrade</div>
-    </div>
-  );
-}
-
-/* ================= NAV ================= */
-
-function Nav({ tab, setTab }) {
-  return (
-    <div className="nav">
-      <button onClick={() => setTab("scores")}>Scores</button>
-      <button onClick={() => setTab("favorites")}>Fav</button>
-      <button onClick={() => setTab("standings")}>Stand</button>
-      <button onClick={() => setTab("beast")}>Beast</button>
-    </div>
-  );
-}
-import { TEAM_LOGOS } from "./API";
-
-function TeamRow({ team }) {
-  return (
-    <div className="team-row">
-      <img
-        src={TEAM_LOGOS[team] || ""}
-        alt={team}
-        style={{ width: 28, height: 28, marginRight: 8 }}
-      />
-      <span>{team}</span>
     </div>
   );
 }

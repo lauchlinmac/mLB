@@ -88,3 +88,31 @@ h2 {
   color: #aaa;
   font-size: 12px;
 }
+
+.muted {
+  color: #777;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+/* makes time info feel “live system” */
+.card {
+  border: 1px solid #222;
+  transition: all 0.15s ease;
+}
+
+.card:active {
+  transform: scale(0.98);
+  border-color: #333;
+}
+
+.live {
+  color: #ff3b3b;
+  animation: pulse 1.2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.45; }
+  100% { opacity: 1; }
+}

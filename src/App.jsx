@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
-import { getScheduleByDate, getBoxScore } from "./api";
-import { getGameDisplayTime } from "./api";
+import {
+  getScheduleByDate,
+  getBoxScore,
+  getGameDisplayTime
+} from "./api";
 
 export default function App() {
   const [tab, setTab] = useState("scores");
@@ -40,16 +43,18 @@ export default function App() {
 }
 
 /* ================= HEADER ================= */
+
 function Header() {
   return (
     <div className="header">
       <div className="title">SOLO BEAST</div>
-      <div className="sub">MLB Command Center</div>
+      <div className="sub">MLB Live Command Center</div>
     </div>
   );
 }
 
 /* ================= SCORES ================= */
+
 function Scores({ games, offset, setOffset }) {
   const [box, setBox] = useState(null);
 
@@ -67,7 +72,7 @@ function Scores({ games, offset, setOffset }) {
   return (
     <div className="section">
 
-      {/* DAY SWITCH */}
+      {/* DAY NAV */}
       <div className="card row">
         <button onClick={() => setOffset(offset - 1)}>⬅️</button>
         <strong>{label}</strong>
@@ -75,32 +80,46 @@ function Scores({ games, offset, setOffset }) {
       </div>
 
       {/* GAMES */}
-      {games.map((g) => (
-        <div
-          key={g.gamePk}
-          className="card"
-          onClick={() => openBox(g.gamePk)}
-        >
-          <div className="teams">
-            {g.teams.away.team.name} @ {g.teams.home.team.name}
-          </div>
+      {games.length === 0 && (
+        <div className="card">No games found</div>
+      )}
 
-          <div className="score">
-            {g.teams.away.score ?? 0} - {g.teams.home.score ?? 0}
-          </div>
+      {games.map((g) => {
+        const isFuture = new Date(g.gameDate) > new Date();
 
-          <div className="muted">
-            {g.status.detailedState}
-          </div>
-        </div>
-      ))}
+        return (
+          <div
+            key={g.gamePk}
+            className={`card ${isFuture ? "future" : ""}`}
+            onClick={() => openBox(g.gamePk)}
+          >
+            <div className="teams">
+              {g.teams.away.team.name} @ {g.teams.home.team.name}
+            </div>
 
-      {box && <BoxPanel box={box} onClose={() => setBox(null)} />}
+            {/* SCORES (FIXED) */}
+            <div className="score">
+              {g.teams.away.score ?? 0} - {g.teams.home.score ?? 0}
+            </div>
+
+            {/* TIME (FIXED FUTURE HANDLING) */}
+            <div className="muted">
+              ⏰ {getGameDisplayTime(g)}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* BOX SCORE MODAL */}
+      {box && (
+        <BoxPanel box={box} onClose={() => setBox(null)} />
+      )}
     </div>
   );
 }
 
 /* ================= BOX SCORE ================= */
+
 function BoxPanel({ box, onClose }) {
   const t = box.teams;
 
@@ -112,22 +131,23 @@ function BoxPanel({ box, onClose }) {
 
       <div className="card">
         <strong>{t.away.team.name}</strong>
-        <div>R: {t.away.teamStats.batting.runs}</div>
-        <div>H: {t.away.teamStats.batting.hits}</div>
-        <div>E: {t.away.teamStats.fielding.errors}</div>
+        <div>Runs: {t.away.teamStats.batting.runs}</div>
+        <div>Hits: {t.away.teamStats.batting.hits}</div>
+        <div>Errors: {t.away.teamStats.fielding.errors}</div>
       </div>
 
       <div className="card">
         <strong>{t.home.team.name}</strong>
-        <div>R: {t.home.teamStats.batting.runs}</div>
-        <div>H: {t.home.teamStats.batting.hits}</div>
-        <div>E: {t.home.teamStats.fielding.errors}</div>
+        <div>Runs: {t.home.teamStats.batting.runs}</div>
+        <div>Hits: {t.home.teamStats.batting.hits}</div>
+        <div>Errors: {t.home.teamStats.fielding.errors}</div>
       </div>
     </div>
   );
 }
 
 /* ================= PLACEHOLDERS ================= */
+
 function Placeholder({ title }) {
   return (
     <div className="section">
@@ -138,6 +158,7 @@ function Placeholder({ title }) {
 }
 
 /* ================= NAV ================= */
+
 function Nav({ tab, setTab }) {
   return (
     <div className="nav">
@@ -148,7 +169,3 @@ function Nav({ tab, setTab }) {
     </div>
   );
 }
-
-<div className="muted">
-  ⏰ {getGameDisplayTime(g)}
-</div>

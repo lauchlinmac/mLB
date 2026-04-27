@@ -1,18 +1,19 @@
 import { useEffect, useState } from "react";
-import { getSchedule, getStandings } from "./api";
+import { getScheduleByDate, getStandings } from "./api";
 
 export default function App() {
   const [tab, setTab] = useState("scores");
+  const [dayOffset, setDayOffset] = useState(0);
   const [games, setGames] = useState([]);
 
   useEffect(() => {
     load();
     const interval = setInterval(load, 20000);
     return () => clearInterval(interval);
-  }, []);
+  }, [dayOffset]);
 
   async function load() {
-    const data = await getSchedule();
+    const data = await getScheduleByDate(dayOffset);
     setGames(data);
   }
 
@@ -20,7 +21,14 @@ export default function App() {
     <div className="app">
       <Header />
 
-      {tab === "scores" && <Scores games={games} />}
+      {tab === "scores" && (
+        <Scores
+          games={games}
+          dayOffset={dayOffset}
+          setDayOffset={setDayOffset}
+        />
+      )}
+
       {tab === "favorites" && <Favorites />}
       {tab === "standings" && <Standings />}
       {tab === "beast" && <Beast games={games} />}
@@ -30,111 +38,103 @@ export default function App() {
   );
 }
 
-// 🧠 HEADER
+/* =========================
+   HEADER
+========================= */
+
 function Header() {
   return (
     <div className="header">
       <div className="title">SOLO BEAST</div>
-      <div className="sub">Live MLB Intelligence</div>
+      <div className="sub">MLB Timeline Intelligence</div>
     </div>
   );
 }
 
-// ⚾ LIVE SCORES
-import { formatGameTime, timeUntilGame } from "./api";
+/* =========================
+   ⚾ SCORES + DAY NAV
+========================= */
 
-function Scores({ games }) {
+function Scores({ games, dayOffset, setDayOffset }) {
+  const label =
+    dayOffset === 0 ? "TODAY" :
+    dayOffset === -1 ? "YESTERDAY" :
+    dayOffset === 1 ? "TOMORROW" :
+    `DAY ${dayOffset}`;
+
   return (
     <div className="section">
-      <h2>LIVE GAMES</h2>
 
+      {/* DAY SWITCHER */}
+      <div className="card">
+        <div className="row">
+          <button onClick={() => setDayOffset(dayOffset - 1)}>
+            ⬅️
+          </button>
+
+          <strong>{label}</strong>
+
+          <button onClick={() => setDayOffset(dayOffset + 1)}>
+            ➡️
+          </button>
+        </div>
+      </div>
+
+      {/* GAMES */}
       {games.length === 0 && (
-        <div className="card">Loading games...</div>
+        <div className="card">No games found</div>
       )}
 
       {games.map((g) => (
         <div key={g.gamePk} className="card">
-
-          {/* Teams */}
           <div className="teams">
             {g.teams.away.team.name} @ {g.teams.home.team.name}
           </div>
 
-          {/* Status */}
           <div className="score live">
             {g.status.detailedState}
           </div>
-
-          {/* NEW: Time Intelligence */}
-          <div className="muted">
-            ⏰ {timeUntilGame(g)} • {formatGameTime(g)}
-          </div>
-
         </div>
       ))}
     </div>
   );
 }
-// ⭐ FAVORITES (placeholder foundation)
+
+/* =========================
+   PLACEHOLDERS
+========================= */
+
 function Favorites() {
   return (
     <div className="section">
       <h2>FAVORITES</h2>
-      <div className="card">Favorite teams coming next upgrade</div>
+      <div className="card">Coming next upgrade</div>
     </div>
   );
 }
 
-// 📊 STANDINGS
 function Standings() {
-  const [data, setData] = useState([]);
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  async function load() {
-    const res = await getStandings();
-    setData(res);
-  }
-
   return (
     <div className="section">
       <h2>STANDINGS</h2>
-
-      {data.slice(0, 2).map((league) => (
-        <div key={league.league.id} className="card">
-          <strong>{league.league.name}</strong>
-
-          {league.teamRecords.slice(0, 5).map((t) => (
-            <div key={t.team.id}>
-              {t.team.name} — {t.wins}-{t.losses}
-            </div>
-          ))}
-        </div>
-      ))}
+      <div className="card">Coming next upgrade</div>
     </div>
   );
 }
 
-// 🔥 BEAST MODE CENTER
 function Beast({ games }) {
   return (
     <div className="section">
       <h2>BEAST MODE</h2>
-
-      <div className="card">
-        Active Games: {games.length}
-      </div>
-
-      <div className="card">
-        System Status: LIVE
-      </div>
+      <div className="card">Games loaded: {games.length}</div>
     </div>
   );
 }
 
-// 📱 NAV BAR
+/* =========================
+   NAV
+========================= */
+
 function Nav({ tab, setTab }) {
   return (
     <div className="nav">

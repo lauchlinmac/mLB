@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { TEAM_LOGOS } from "./API";
 
 export default function App() {
@@ -6,6 +7,8 @@ export default function App() {
 
   useEffect(() => {
     fetchGames();
+    const interval = setInterval(fetchGames, 30000); // live refresh
+    return () => clearInterval(interval);
   }, []);
 
   async function fetchGames() {
@@ -14,7 +17,7 @@ export default function App() {
       const data = await res.json();
       setGames(data.games || []);
     } catch (err) {
-      console.error("Failed to load games:", err);
+      console.error(err);
     }
   }
 
@@ -23,55 +26,100 @@ export default function App() {
       <div className="flex items-center gap-2">
         <img
           src={TEAM_LOGOS[name]}
+          className="w-7 h-7 drop-shadow-[0_0_6px_rgba(255,255,255,0.3)]"
           alt={name}
-          className="w-6 h-6 object-contain"
           onError={(e) => (e.target.style.display = "none")}
         />
-        <span>{name}</span>
+        <span className="text-sm font-medium">{name}</span>
       </div>
+    );
+  }
+
+  function LiveDot({ isLive }) {
+    if (!isLive) return null;
+    return (
+      <span className="relative flex h-2 w-2">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+      </span>
     );
   }
 
   function GameCard({ game }) {
+    const isLive = game.status === "LIVE";
+
     return (
-      <div className="bg-gray-900 text-white p-4 rounded-xl shadow-md mb-3">
-        {/* Away Team */}
-        <div className="flex justify-between items-center mb-2">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="min-w-[320px] bg-gradient-to-b from-gray-900 to-black text-white rounded-2xl p-4 shadow-xl snap-center border border-gray-800"
+      >
+        {/* Header */}
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <LiveDot isLive={isLive} />
+            {isLive ? `LIVE • ${game.inning || ""}` : game.gameTime}
+          </div>
+
+          <div className="text-xs text-gray-500">
+            {game.venue || "MLB Stadium"}
+          </div>
+        </div>
+
+        {/* Away */}
+        <div className="flex justify-between items-center py-2">
           <Team name={game.awayTeam} />
-          <span className="font-bold">
+          <span className="text-xl font-bold text-blue-300">
             {game.awayScore ?? "-"}
           </span>
         </div>
 
-        {/* Home Team */}
-        <div className="flex justify-between items-center">
+        {/* VS Divider */}
+        <div className="text-center text-gray-600 text-xs my-1">
+          ● ● ●
+        </div>
+
+        {/* Home */}
+        <div className="flex justify-between items-center py-2">
           <Team name={game.homeTeam} />
-          <span className="font-bold">
+          <span className="text-xl font-bold text-red-300">
             {game.homeScore ?? "-"}
           </span>
         </div>
 
-        {/* Status / Time */}
-        <div className="text-xs text-gray-400 mt-2">
-          {game.status === "LIVE"
-            ? `🔴 Live • ${game.inning || ""}`
-            : game.gameTime || "Scheduled"}
+        {/* Status Bar */}
+        <div className="mt-3 text-xs">
+          {isLive ? (
+            <div className="text-green-400 animate-pulse">
+              ● Scoring activity / Live action updating
+            </div>
+          ) : (
+            <div className="text-gray-500">
+              Scheduled game
+            </div>
+          )}
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="p-4 max-w-md mx-auto">
-      <h1 className="text-xl font-bold mb-4">MLB Live Scores</h1>
+    <div className="bg-black min-h-screen text-white p-4">
+      {/* Header */}
+      <h1 className="text-2xl font-bold mb-3 tracking-wide">
+        ⚾ MLB Beast Mode Live
+      </h1>
 
-      {games.length === 0 ? (
-        <div className="text-gray-400">Loading games...</div>
-      ) : (
-        games.map((game, idx) => (
-          <GameCard key={idx} game={game} />
-        ))
-      )}
+      <p className="text-xs text-gray-500 mb-4">
+        Swipe → for more games
+      </p>
+
+      {/* Swipeable Row */}
+      <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4">
+        {games.map((game, i) => (
+          <GameCard key={i} game={game} />
+        ))}
+      </div>
     </div>
   );
 }

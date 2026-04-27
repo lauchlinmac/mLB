@@ -116,3 +116,17 @@ h2 {
   50% { opacity: 0.45; }
   100% { opacity: 1; }
 }
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.row button {
+  background: #111;
+  border: 1px solid #222;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+}

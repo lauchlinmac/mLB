@@ -1,12 +1,24 @@
-export async function fetchGames(date = null) {
-  const today =
-    date ||
-    new Date().toISOString().split("T")[0];
+// Basic API normalization layer
 
-  const url = `https://statsapi.mlb.com/api/v1/schedule/games/?sportId=1&date=${today}&hydrate=linescore,team`;
+export async function fetchLiveGames() {
+  const res = await fetch("/api/games");
+  return res.json();
+}
 
-  const res = await fetch(url);
-  const data = await res.json();
+export function normalizePlayerStats(player) {
+  return {
+    id: player.id,
+    name: player.name,
+    team: player.team,
 
-  return data.dates?.[0]?.games || [];
+    hits: player.stats?.hits ?? 0,
+    runs: player.stats?.runs ?? 0,
+    rbi: player.stats?.rbi ?? 0,
+
+    atBats: player.stats?.atBats ?? player.stats?.ab ?? 0,
+
+    walks: player.stats?.baseOnBalls ?? player.stats?.bb ?? 0,
+    hitByPitch: player.stats?.hitByPitch ?? player.stats?.hbp ?? 0,
+    plateAppearances: player.stats?.plateAppearances ?? player.stats?.pa ?? 0
+  };
 }

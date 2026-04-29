@@ -3,13 +3,14 @@ import { connectLiveFeed } from "./live/liveFeed";
 import { getLiveState } from "./live/pitchEngine";
 
 export default function App() {
-  const [state, setState] = useState(getLiveState());
-
+  const [state, setState] = useState({ players: {} });
+  
   useEffect(() => {
-    const ws = connectLiveFeed(setState);
+  const conn = connectLiveFeed(setState);
 
-    return () => ws?.close();
-  }, []);
+  return () => conn.close();
+}, []);
+  
 
   const players = Object.values(state.players);
 

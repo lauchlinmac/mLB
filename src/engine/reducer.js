@@ -1,8 +1,14 @@
 import { createPlayer } from "./stats";
-import { PitchResult } from "./types";
+import { calculateWinProbability } from "./winProb";
 
 export const initialState = {
   players: {},
+  game: {
+    homeScore: 0,
+    awayScore: 0,
+    inning: 1
+  },
+  winProbHistory: [],
   lastPitch: null
 };
 
@@ -12,54 +18,56 @@ export function reducer(state, action) {
     case "PITCH_EVENT": {
       const e = action.payload;
 
-      if (!e?.batterId) return state;
-
-      const player = state.players[e.batterId] ?? createPlayer(
-        e.batterId,
-        e.batterName,
-        e.batterTeam
-      );
+      const player =
+        state.players[e.batterId] ?? createPlayer(e.batterId, e.batterName, e.batterTeam);
 
       const updated = { ...player };
 
       updated.plateAppearances += 1;
 
       switch (e.result) {
-        case PitchResult.SINGLE:
-        case PitchResult.DOUBLE:
-        case PitchResult.TRIPLE:
-        case PitchResult.HOME_RUN:
+        case "single":
+        case "double":
+        case "triple":
+        case "home_run":
           updated.hits += 1;
           updated.atBats += 1;
           break;
 
-        case PitchResult.OUT:
+        case "out":
           updated.atBats += 1;
           break;
 
-        case PitchResult.WALK:
+        case "walk":
           updated.walks += 1;
-          break;
-
-        case PitchResult.HBP:
-          updated.hitByPitch += 1;
           break;
       }
 
       if (e.rbi) updated.rbi += e.rbi;
 
+      const newPlayers = {
+        ...state.players,
+        [updated.id]: updated
+      };
+
+      // 🎯 update game score if provided
+      const newGame = {
+        ...state.game,
+        homeScore: e.homeScore ?? state.game.homeScore,
+        awayScore: e.awayScore ?? state.game.awayScore,
+        inning: e.inning ?? state.game.inning
+      };
+
+      const winProb = calculateWinProbability(newGame);
+
       return {
         ...state,
-        players: {
-          ...state.players,
-          [updated.id]: updated
-        },
-        lastPitch: e
+        players: newPlayers,
+        game: newGame,
+        lastPitch: e,
+        winProbHistory: [...state.winProbHistory, winProb]
       };
     }
-
-    case "RESET":
-      return initialState;
 
     default:
       return state;

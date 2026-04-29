@@ -1,8 +1,5 @@
-// Beast Mode Live Stat Engine (pitch-by-pitch state)
-
 const state = {
-  players: {},
-  games: {}
+  players: {}
 };
 
 function ensurePlayer(id, name, team) {
@@ -23,12 +20,13 @@ function ensurePlayer(id, name, team) {
   return state.players[id];
 }
 
-// 🔥 CORE ENGINE
 export function applyPitchEvent(event) {
+  if (!event?.batterId) return state;
+
   const batter = ensurePlayer(
     event.batterId,
-    event.batterName,
-    event.batterTeam
+    event.batterName || "Unknown",
+    event.batterTeam || "TBD"
   );
 
   batter.plateAppearances += 1;
@@ -55,13 +53,14 @@ export function applyPitchEvent(event) {
       break;
   }
 
-  if (event.rbi) {
-    batter.rbi += event.rbi;
-  }
+  if (event.rbi) batter.rbi += event.rbi;
 
   return state;
 }
 
 export function getLiveState() {
-  return state;
+  // 🔥 IMPORTANT: force new object reference for React
+  return {
+    players: { ...state.players }
+  };
 }

@@ -1,24 +1,26 @@
-// Basic API normalization layer
+export async function fetchGames() {
+  try {
+    const today = new Date().toISOString().split("T")[0];
 
-export async function fetchLiveGames() {
-  const res = await fetch("/api/games");
-  return res.json();
-}
+    const res = await fetch(
+      `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${today}&hydrate=linescore,team`
+    );
 
-export function normalizePlayerStats(player) {
-  return {
-    id: player.id,
-    name: player.name,
-    team: player.team,
+    const data = await res.json();
 
-    hits: player.stats?.hits ?? 0,
-    runs: player.stats?.runs ?? 0,
-    rbi: player.stats?.rbi ?? 0,
+    if (!data.dates || data.dates.length === 0) return [];
 
-    atBats: player.stats?.atBats ?? player.stats?.ab ?? 0,
-
-    walks: player.stats?.baseOnBalls ?? player.stats?.bb ?? 0,
-    hitByPitch: player.stats?.hitByPitch ?? player.stats?.hbp ?? 0,
-    plateAppearances: player.stats?.plateAppearances ?? player.stats?.pa ?? 0
-  };
+    return data.dates[0].games.map((game) => ({
+      id: game.gamePk,
+      status: game.status.detailedState,
+      away: game.teams.away.team.name,
+      home: game.teams.home.team.name,
+      awayScore: game.teams.away.score ?? 0,
+      homeScore: game.teams.home.score ?? 0,
+      inning: game.linescore?.currentInningOrdinal || "",
+    }));
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
 }

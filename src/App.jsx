@@ -1,40 +1,65 @@
+// src/App.jsx
 import { useEffect, useState } from "react";
-import { fetchGames } from "./api";
+import "./styles.css";
+import { fetchSchedule } from "./api";
+import GameCard from "./components/GameCard";
+import GameCenter from "./components/GameCenter";
+import Leaders from "./components/Leaders";
 
 export default function App() {
   const [games, setGames] = useState([]);
+  const [selectedGame, setSelectedGame] = useState(null);
+  const [tab, setTab] = useState("today");
+  const [loading, setLoading] = useState(true);
+
+  async function loadGames() {
+    setLoading(true);
+    const data = await fetchSchedule(tab);
+    setGames(data);
+    if (!selectedGame && data.length) setSelectedGame(data[0]);
+    setLoading(false);
+  }
 
   useEffect(() => {
     loadGames();
-    const interval = setInterval(loadGames, 15000);
-    return () => clearInterval(interval);
-  }, []);
-
-  async function loadGames() {
-    const data = await fetchGames();
-    setGames(data);
-  }
+    const timer = setInterval(loadGames, 15000);
+    return () => clearInterval(timer);
+  }, [tab]);
 
   return (
-    <div style={{ background:"#000", color:"#fff", minHeight:"100vh", padding:"20px" }}>
-      <h1>⚾ Beast Mode Live Game Center</h1>
+    <div className="app">
+      <header className="header">
+        <h1>⚾ Beast Mode Live v7</h1>
 
-      {games.length === 0 ? (
-        <h2>Loading Games...</h2>
+        <div className="tabs">
+          <button onClick={() => setTab("prev")}>Previous</button>
+          <button onClick={() => setTab("today")}>Today</button>
+          <button onClick={() => setTab("next")}>Next</button>
+        </div>
+      </header>
+
+      {loading ? (
+        <div className="loading">Loading Games...</div>
       ) : (
-        games.map((g) => (
-          <div key={g.id}
-            style={{
-              border:"1px solid #444",
-              padding:"15px",
-              marginBottom:"10px",
-              borderRadius:"12px"
-            }}
-          >
-            <h2>{g.away} {g.awayScore} @ {g.homeScore} {g.home}</h2>
-            <p>{g.status} {g.inning}</p>
+        <>
+          <div className="scoreboard">
+            {games.map((game) => (
+              <GameCard
+                key={game.id}
+                game={game}
+                active={selectedGame?.id === game.id}
+                onClick={() => setSelectedGame(game)}
+              />
+            ))}
           </div>
-        ))
+
+          {selectedGame && (
+            <>
+              <GameCenter game={selectedGame} />
+              <Leaders game={selectedGame} />
+            </>
+          )}
+        </>
       )}
     </div>
   );

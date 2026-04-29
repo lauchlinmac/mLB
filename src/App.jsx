@@ -1,65 +1,41 @@
-import { useEffect, useReducer } from "react";
-import { reducer, initialState } from "./engine/reducer";
-import { startLiveFeed } from "./live/feed";
-import PitchMap from "./components/PitchMap";
-import WinProbGraph from "./components/WinProbGraph";
+import { useEffect, useState } from "react";
+import { fetchGames } from "./api";
 
 export default function App() {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [games, setGames] = useState([]);
 
   useEffect(() => {
-    const feed = startLiveFeed(dispatch);
-    return () => feed.close();
+    loadGames();
+    const interval = setInterval(loadGames, 15000);
+    return () => clearInterval(interval);
   }, []);
 
-  const players = Object.values(state.players);
-
-  const latestProb = state.winProbHistory;
+  async function loadGames() {
+    const data = await fetchGames();
+    setGames(data);
+  }
 
   return (
-    <div style={{ padding: 20, background: "#111", color: "#fff" }}>
-      <h1>⚾ ESPN-Style Beast Broadcast Engine</h1>
+    <div style={{ background:"#000", color:"#fff", minHeight:"100vh", padding:"20px" }}>
+      <h1>⚾ Beast Mode Live Game Center</h1>
 
-      {/* 🎥 LIVE FEED STRIP */}
-      <div style={{ marginBottom: 10 }}>
-        🔥 Last Pitch: {state.lastPitch?.result || "Waiting..."}
-      </div>
-
-      {/* GRID */}
-      <div style={{ display: "flex", gap: 20 }}>
-        
-        {/* PLAYER TABLE */}
-        <div>
-          <h3>Players</h3>
-          <table border="1" cellPadding="6">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>AB</th>
-                <th>H</th>
-                <th>RBI</th>
-              </tr>
-            </thead>
-            <tbody>
-              {players.map(p => (
-                <tr key={p.id}>
-                  <td>{p.name}</td>
-                  <td>{p.atBats}</td>
-                  <td>{p.hits}</td>
-                  <td>{p.rbi}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* 🎯 PITCH MAP */}
-        <PitchMap pitch={state.lastPitch} />
-
-        {/* 📈 WIN PROB */}
-        <WinProbGraph data={latestProb} />
-
-      </div>
+      {games.length === 0 ? (
+        <h2>Loading Games...</h2>
+      ) : (
+        games.map((g) => (
+          <div key={g.id}
+            style={{
+              border:"1px solid #444",
+              padding:"15px",
+              marginBottom:"10px",
+              borderRadius:"12px"
+            }}
+          >
+            <h2>{g.away} {g.awayScore} @ {g.homeScore} {g.home}</h2>
+            <p>{g.status} {g.inning}</p>
+          </div>
+        ))
+      )}
     </div>
   );
 }

@@ -1,0 +1,24 @@
+export function createPlayer(id, name, team) {
+  return {
+    id,
+    name,
+    team,
+
+    hits: 0,
+    runs: 0,
+    rbi: 0,
+
+    atBats: 0,
+    walks: 0,
+    hitByPitch: 0,
+    plateAppearances: 0
+  };
+}
+
+export function calculateOBP(p) {
+  const denom = p.atBats + p.walks + p.hitByPitch;
+
+  if (!denom) return 0;
+
+  return (p.hits + p.walks + p.hitByPitch) / denom;
+}

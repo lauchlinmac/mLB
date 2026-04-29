@@ -1,60 +1,36 @@
-import { applyPitchEvent, getLiveState } from "./pitchEngine";
-
-export function connectLiveFeed(setState) {
+export function startLiveFeed(dispatch) {
   let ws;
-  let interval;
 
-  const pushState = () => {
-    setState(getLiveState());
-  };
+  const send = (event) =>
+    dispatch({ type: "PITCH_EVENT", payload: event });
 
-  // 🔥 Try WebSocket
   try {
     ws = new WebSocket("wss://your-api/live");
 
     ws.onmessage = (msg) => {
-      try {
-        const event = JSON.parse(msg.data);
-        applyPitchEvent(event);
-        pushState();
-      } catch (e) {
-        console.error("Bad event:", e);
-      }
+      const e = JSON.parse(msg.data);
+
+      send({
+        batterId: e.batterId,
+        batterName: e.batterName,
+        batterTeam: e.batterTeam,
+        result: e.result,
+        rbi: e.rbi,
+
+        // 🎯 NEW ESPN DATA
+        x: e.x,   // 0–100 strike zone horizontal
+        y: e.y,   // 0–100 vertical location
+        inning: e.inning,
+        homeScore: e.homeScore,
+        awayScore: e.awayScore
+      });
     };
 
-    ws.onerror = () => {
-      console.warn("WebSocket failed → switching to polling");
-      ws.close();
-      startPolling();
-    };
-  } catch (e) {
-    startPolling();
-  }
-
-  // 🔥 fallback polling
-  function startPolling() {
-    interval = setInterval(async () => {
-      try {
-        const res = await fetch("/api/live-pitches");
-
-        if (!res.ok) return;
-
-        const events = await res.json();
-
-        if (Array.isArray(events)) {
-          events.forEach(applyPitchEvent);
-          pushState();
-        }
-      } catch (err) {
-        console.error("Polling error:", err);
-      }
-    }, 2500);
+  } catch {
+    console.warn("WS failed");
   }
 
   return {
-    close: () => {
-      ws?.close();
-      clearInterval(interval);
-    }
+    close: () => ws?.close()
   };
 }

@@ -1,70 +1,84 @@
 body {
   margin: 0;
-  background: #050505;
+  background: #0b0b0f;
   color: white;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: sans-serif;
 }
 
 .app {
-  padding: 14px;
-  max-width: 700px;
-  margin: auto;
-}
-
-h1 {
-  text-align: center;
-  margin-bottom: 5px;
-}
-
-.updated {
-  text-align: center;
-  color: #aaa;
-  margin-bottom: 18px;
-}
-
-.games {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.card {
-  background: #111;
-  border: 1px solid #222;
-  border-radius: 18px;
   padding: 16px;
-  box-shadow: 0 0 14px rgba(255,255,255,0.04);
 }
 
-.teamRow {
-  display: grid;
-  grid-template-columns: 38px 1fr auto;
+.score-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 24px;
+}
+
+.team {
+  display: flex;
   align-items: center;
   gap: 10px;
-  margin: 8px 0;
-  font-size: 18px;
 }
 
-.teamRow img {
-  width: 34px;
-  height: 34px;
+.team img {
+  width: 40px;
 }
 
-.teamRow strong {
-  font-size: 26px;
-  color: #ff4040;
+.game-state {
+  margin-top: 10px;
+  color: #aaa;
 }
 
-.status {
-  margin-top: 12px;
-  text-align: center;
-  color: #bbb;
-  font-size: 17px;
+.last-pitch {
+  margin: 10px 0;
 }
 
-.loading {
-  color: white;
-  text-align: center;
-  padding-top: 100px;
-  font-size: 24px;
+.matchup {
+  display: flex;
+  justify-content: space-between;
+  margin: 15px 0;
+}
+
+.win-prob .bar {
+  height: 10px;
+  background: #222;
+  margin: 5px 0;
+}
+
+.win-prob .bar div {
+  height: 100%;
+  background: red;
+}
+
+.diamond {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin: 20px auto;
+}
+
+.base {
+  width: 20px;
+  height: 20px;
+  background: #333;
+  position: absolute;
+}
+
+.base.active {
+  background: red;
+}
+
+.first { bottom: 0; right: 0; }
+.second { top: 0; left: 40px; }
+.third { bottom: 0; left: 0; }
+
+.plays {
+  margin-top: 20px;
+}
+
+.play {
+  padding: 5px 0;
+  border-bottom: 1px solid #222;
 }

@@ -32,7 +32,14 @@ export default function App() {
   const plays = live.plays;
 
   const currentPlay = plays.currentPlay;
-
+if (
+  !game ||
+  !game.liveData ||
+  !game.liveData.linescore ||
+  !game.liveData.plays
+) {
+  return <div className="loading">Loading Beast Mode...</div>;
+}
   return (
     <div className="app">
       <ScoreHeader linescore={linescore} game={game} />

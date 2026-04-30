@@ -1,66 +1,56 @@
-// src/App.jsx
 import { useEffect, useState } from "react";
-import "./styles.css";
-import { fetchSchedule } from "./api";
-import GameCard from "./components/GameCard";
-import GameCenter from "./components/GameCenter";
-import Leaders from "./components/Leaders";
+import ScoreHeader from "./components/ScoreHeader";
+import GameState from "./components/GameState";
+import BatterPitcher from "./components/BatterPitcher";
+import WinProbability from "./components/WinProbability";
+import BaseDiamond from "./components/BaseDiamond";
+import PlayByPlay from "./components/PlayByPlay";
+import LastPitch from "./components/LastPitch";
+import { fetchGameFeed } from "./services/mlbApi";
 
 export default function App() {
-  const [games, setGames] = useState([]);
-  const [selectedGame, setSelectedGame] = useState(null);
-  const [tab, setTab] = useState("today");
-  const [loading, setLoading] = useState(true);
+  const [game, setGame] = useState(null);
 
-  async function loadGames() {
-    setLoading(true);
-    const data = await fetchSchedule(tab);
-    setGames(data);
-    if (!selectedGame && data.length) setSelectedGame(data[0]);
-    setLoading(false);
-  }
+  const GAME_PK = 746123; // 🔥 replace with live gamePk
 
   useEffect(() => {
-    loadGames();
-    const timer = setInterval(loadGames, 15000);
-    return () => clearInterval(timer);
-  }, [tab]);
+    const loadGame = async () => {
+      const data = await fetchGameFeed(GAME_PK);
+      setGame(data);
+    };
+
+    loadGame();
+    const interval = setInterval(loadGame, 3000); // update every 3 sec
+
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!game) return <div className="loading">Loading Beast Mode...</div>;
+
+  const live = game.liveData;
+  const linescore = live.linescore;
+  const plays = live.plays;
+
+  const currentPlay = plays.currentPlay;
 
   return (
     <div className="app">
-      <header className="header">
-        <h1>⚾ Beast Mode Live v7</h1>
+      <ScoreHeader linescore={linescore} game={game} />
 
-        <div className="tabs">
-          <button onClick={() => setTab("prev")}>Previous</button>
-          <button onClick={() => setTab("today")}>Today</button>
-          <button onClick={() => setTab("next")}>Next</button>
-        </div>
-      </header>
+      <GameState
+        linescore={linescore}
+        count={currentPlay?.count}
+      />
 
-      {loading ? (
-        <div className="loading">Loading Games...</div>
-      ) : (
-        <>
-          <div className="scoreboard">
-            {games.map((game) => (
-              <GameCard
-                key={game.id}
-                game={game}
-                active={selectedGame?.id === game.id}
-                onClick={() => setSelectedGame(game)}
-              />
-            ))}
-          </div>
+      <LastPitch play={currentPlay} />
 
-          {selectedGame && (
-            <>
-              <GameCenter game={selectedGame} />
-              <Leaders game={selectedGame} />
-            </>
-          )}
-        </>
-      )}
+      <BatterPitcher matchup={currentPlay?.matchup} />
+
+      <WinProbability />
+
+      <BaseDiamond offense={linescore.offense} />
+
+      <PlayByPlay allPlays={plays.allPlays} />
     </div>
   );
 }

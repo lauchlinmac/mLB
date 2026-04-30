@@ -1,4 +1,6 @@
 export default function BaseDiamond({ offense }) {
+  if (!offense) return null;
+
   return (
     <div className="diamond">
       <div className={`base second ${offense.second ? "active" : ""}`} />

@@ -1,21 +1,17 @@
-// src/App.jsx
-
 import { useEffect, useState } from "react";
-import { fetchGames, fetchLiveGame } from "./API";
-import "./App.css";
+import { fetchGames } from "./API";
 
-function App() {
+export default function App() {
   const [games, setGames] = useState([]);
-  const [selectedGame, setSelectedGame] = useState(null);
-  const [liveData, setLiveData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [liveLoading, setLiveLoading] = useState(false);
 
-  // LOAD SCOREBOARD
   useEffect(() => {
-    async function loadGames() {
+    async function load() {
       try {
         const data = await fetchGames();
+
+        console.log("Games:", data);
+
         setGames(data);
       } catch (err) {
         console.error(err);
@@ -24,33 +20,39 @@ function App() {
       }
     }
 
-    loadGames();
-
-    const interval = setInterval(loadGames, 30000);
-
-    return () => clearInterval(interval);
+    load();
   }, []);
 
-  // LOAD LIVE GAME
-  async function openGame(gamePk) {
-    setSelectedGame(gamePk);
-    setLiveLoading(true);
-
-    try {
-      const data = await fetchLiveGame(gamePk);
-      setLiveData(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLiveLoading(false);
-    }
+  if (loading) {
+    return (
+      <div className="loading">
+        Loading...
+      </div>
+    );
   }
 
-  // AUTO REFRESH LIVE GAME
-  useEffect(() => {
-    if (!selectedGame) return;
+  return (
+    <div className="app">
+      <h1>⚾ Beast Mode MLB</h1>
 
-    async function refreshGame() {
-      const data = await fetchLiveGame(selectedGame);
+      {games.length === 0 && (
+        <div>No games found</div>
+      )}
 
-      if (data) {
+      {games.map((game) => (
+        <div
+          className="game"
+          key={game.gamePk}
+        >
+          <div>
+            {game.teams.away.team.name}
+          </div>
+
+          <div>
+            {game.teams.home.team.name}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}

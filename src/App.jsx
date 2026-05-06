@@ -13,11 +13,15 @@ export default function App() {
 
   const GAME_PK = 746123; // 🔥 replace with live gamePk
 
-  useEffect(() => {
-    const loadGame = async () => {
-      const data = await fetchGameFeed(GAME_PK);
-      setGame(data);
-    };
+ useEffect(() => {
+  fetchGame();
+
+  const interval = setInterval(() => {
+    fetchGame();
+  }, 5000); // every 5 seconds
+
+  return () => clearInterval(interval);
+}, [gamePk]);
 
     loadGame();
     const interval = setInterval(loadGame, 3000); // update every 3 sec

@@ -1,46 +1,56 @@
+// src/App.jsx
+
 import { useEffect, useState } from "react";
-import { fetchTodayGames, fetchGameData } from "./api";
+import { fetchGames, fetchLiveGame } from "./API";
+import "./App.css";
 
-export default function App() {
-  const [gameData, setGameData] = useState(null);
-  const [error, setError] = useState(null);
-const [loading, setLoading] = useState(true);
+function App() {
+  const [games, setGames] = useState([]);
+  const [selectedGame, setSelectedGame] = useState(null);
+  const [liveData, setLiveData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [liveLoading, setLiveLoading] = useState(false);
 
-useEffect(() => {
-  async function loadGames() {
+  // LOAD SCOREBOARD
+  useEffect(() => {
+    async function loadGames() {
+      try {
+        const data = await fetchGames();
+        setGames(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadGames();
+
+    const interval = setInterval(loadGames, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // LOAD LIVE GAME
+  async function openGame(gamePk) {
+    setSelectedGame(gamePk);
+    setLiveLoading(true);
+
     try {
-      const data = await fetchGames();
-      setGames(data);
-    } catch (e) {
-      console.error(e);
+      const data = await fetchLiveGame(gamePk);
+      setLiveData(data);
+    } catch (err) {
+      console.error(err);
     } finally {
-      setLoading(false);
+      setLiveLoading(false);
     }
   }
 
-  loadGames();
-}, []);
+  // AUTO REFRESH LIVE GAME
   useEffect(() => {
-  
+    if (!selectedGame) return;
 
-    init();
-  }, []);
+    async function refreshGame() {
+      const data = await fetchLiveGame(selectedGame);
 
-  if (error) {
-    return <div style={{ color: "red" }}>{error}</div>;
-  }
-
-  if (!gameData) {
-    return <div style={{ color: "white" }}>Loading...</div>;
-  }
-
-  const away = gameData.gameData.teams.away.abbreviation;
-  const home = gameData.gameData.teams.home.abbreviation;
-
-  return (
-    <div style={{ color: "white", padding: 20 }}>
-      <h1>{away} vs {home}</h1>
-      <p>{gameData.gameData.status.detailedState}</p>
-    </div>
-  );
-}
+      if (data) {

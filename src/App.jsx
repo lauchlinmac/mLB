@@ -4,27 +4,24 @@ import { fetchTodayGames, fetchGameData } from "./api";
 export default function App() {
   const [gameData, setGameData] = useState(null);
   const [error, setError] = useState(null);
+const [loading, setLoading] = useState(true);
 
+useEffect(() => {
+  async function loadGames() {
+    try {
+      const data = await fetchGames();
+      setGames(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  loadGames();
+}, []);
   useEffect(() => {
-    const init = async () => {
-      const games = await fetchTodayGames();
-
-      if (!games.length) {
-        setError("No games found");
-        return;
-      }
-
-      const game = games[0]; // just grab first
-
-      const data = await fetchGameData(game.gamePk);
-
-      if (!data) {
-        setError("Failed to load game data");
-        return;
-      }
-
-      setGameData(data);
-    };
+  
 
     init();
   }, []);

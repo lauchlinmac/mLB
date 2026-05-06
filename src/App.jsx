@@ -1,14 +1,13 @@
 import { useEffect, useState, useRef } from "react";
-import { fetchTodayGames, fetchValidGameFeed } from "./api";
+import { fetchTodayGames, fetchGameData } from "./api";
 
 export default function App() {
-  const [gameData, setGameData] = useState(null);
   const [gamePk, setGamePk] = useState(null);
+  const [gameData, setGameData] = useState(null);
   const [error, setError] = useState(null);
-  const [isFinal, setIsFinal] = useState(false);
   const intervalRef = useRef(null);
 
-  // 🔍 STEP 1: Find a VALID game
+  // ✅ STEP 1: JUST PICK A GAME (no validation)
   useEffect(() => {
     const init = async () => {
       const games = await fetchTodayGames();
@@ -18,89 +17,75 @@ export default function App() {
         return;
       }
 
-      // Priority: live → scheduled → final
-      const sorted = [
-        ...games.filter(g => g.status.detailedState === "In Progress"),
-        ...games.filter(g => g.status.detailedState === "Scheduled"),
-        ...games
-      ];
+      // Prefer live, else first game
+      const game =
+        games.find(g => g.status.detailedState === "In Progress") ||
+        games[0];
 
-      for (const g of sorted) {
-        const data = await fetchValidGameFeed(g.gamePk);
+      console.log("Using gamePk:", game.gamePk);
 
-        if (data) {
-          setGamePk(g.gamePk);
-          setGameData(data);
-          return;
-        }
-      }
-
-      setError("No valid game feed found");
+      setGamePk(game.gamePk);
     };
 
     init();
   }, []);
 
-  // 🔄 STEP 2: Poll updates
+  // ✅ STEP 2: FETCH DATA
   useEffect(() => {
     if (!gamePk) return;
 
     const load = async () => {
-      const data = await fetchValidGameFeed(gamePk);
+      const data = await fetchGameData(gamePk);
 
-      if (!data) return;
-
-      setGameData({ ...data });
-
-      const status = data?.gameData?.status?.detailedState;
-
-      if (status === "Final" || status === "Game Over") {
-        setIsFinal(true);
-        clearInterval(intervalRef.current);
+      if (!data) {
+        setError("Failed to load game data");
+        return;
       }
+
+      setGameData(data);
     };
+
+    load();
 
     intervalRef.current = setInterval(load, 5000);
 
     return () => clearInterval(intervalRef.current);
   }, [gamePk]);
 
-  // 🚨 ERROR
+  // ERROR
   if (error) {
     return (
       <div style={{ color: "red", padding: 20 }}>
-        {error}
+        ERROR: {error}
       </div>
     );
   }
 
-  // ⏳ LOADING
+  // LOADING
   if (!gameData) {
     return (
       <div style={{ color: "white", padding: 20 }}>
-        Finding live game...
+        Loading game...
       </div>
     );
   }
 
   const linescore = gameData.liveData?.linescore;
   const plays = gameData.liveData?.plays?.allPlays || [];
-  const lastPlay = plays[plays.length - 1];
+  const lastPlay = plays.length ? plays[plays.length - 1] : null;
 
-  const away = gameData.gameData.teams.away.abbreviation;
-  const home = gameData.gameData.teams.home.abbreviation;
+  const away = gameData.gameData?.teams?.away?.abbreviation || "AWAY";
+  const home = gameData.gameData?.teams?.home?.abbreviation || "HOME";
 
-  const awayScore = linescore?.teams?.away?.runs ?? 0;
-  const homeScore = linescore?.teams?.home?.runs ?? 0;
+  const awayScore = linescore?.teams?.away?.runs ?? "-";
+  const homeScore = linescore?.teams?.home?.runs ?? "-";
+
+  const status = gameData.gameData?.status?.detailedState;
 
   return (
     <div style={{ padding: 20, color: "white", background: "#0b0b0b", minHeight: "100vh" }}>
       
-      <h2>
-        {isFinal
-          ? "FINAL"
-          : `${linescore?.inningState} ${linescore?.currentInning} | ${linescore?.outs} Outs`}
-      </h2>
+      <h2>{status || "Loading status..."}</h2>
 
       <h1>
         {away} {awayScore} - {homeScore} {home}

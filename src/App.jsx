@@ -1,69 +1,97 @@
-import { useEffect, useState } from "react";
-import ScoreHeader from "./components/ScoreHeader";
-import GameState from "./components/GameState";
-import BatterPitcher from "./components/BatterPitcher";
-import WinProbability from "./components/WinProbability";
-import BaseDiamond from "./components/BaseDiamond";
-import PlayByPlay from "./components/PlayByPlay";
-import LastPitch from "./components/LastPitch";
-import { fetchGameFeed } from "./services/mlbApi";
+import { useEffect, useState, useRef } from "react";
+import { fetchGameData } from "./api";
 
 export default function App() {
-  const [game, setGame] = useState(null);
+  const [gamePk, setGamePk] = useState(746092); // replace if needed
+  const [gameData, setGameData] = useState(null);
+  const [isFinal, setIsFinal] = useState(false);
+  const intervalRef = useRef(null);
 
-  const GAME_PK = 746123; // 🔥 replace with live gamePk
+  const loadGame = async () => {
+    const data = await fetchGameData(gamePk);
 
- useEffect(() => {
-  fetchGame();
+    if (!data) return;
 
-  const interval = setInterval(() => {
-    fetchGame();
-  }, 5000); // every 5 seconds
+    // ✅ Always replace state (no mutation)
+    setGameData({ ...data });
 
-  return () => clearInterval(interval);
-}, [gamePk]);
+    const status = data?.gameData?.status?.detailedState;
 
+    if (status === "Final" || status === "Game Over") {
+      setIsFinal(true);
+
+      // ✅ stop polling when game ends
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    }
+  };
+
+  useEffect(() => {
     loadGame();
-    const interval = setInterval(loadGame, 3000); // update every 3 sec
 
-    return () => clearInterval(interval);
-  }, []);
+    // ✅ start polling
+    intervalRef.current = setInterval(() => {
+      console.log("Fetching update...");
+      loadGame();
+    }, 5000);
 
-  if (!game) return <div className="loading">Loading Beast Mode...</div>;
-if (gameData.gameData.status.detailedState === "Final") {
-  setGameOver(true);
-}
-  const live = game.liveData;
-  const linescore = live.linescore;
-  const plays = live.plays;
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [gamePk]);
 
-  const currentPlay = plays.currentPlay;
-if (
-  !game ||
-  !game.liveData ||
-  !game.liveData.linescore ||
-  !game.liveData.plays
-) {
-  return <div className="loading">Loading Beast Mode...</div>;
-}
+  if (!gameData) {
+    return <div style={{ color: "white" }}>Loading...</div>;
+  }
+
+  const linescore = gameData.liveData?.linescore;
+  const plays = gameData.liveData?.plays?.allPlays || [];
+
+  // ✅ ALWAYS get latest play
+  const lastPlay = plays.length > 0 ? plays[plays.length - 1] : null;
+
+  const inning = linescore?.currentInning;
+  const inningState = linescore?.inningState;
+  const outs = linescore?.outs;
+
+  const away =
+    gameData.gameData.teams.away.abbreviation;
+  const home =
+    gameData.gameData.teams.home.abbreviation;
+
+  const awayScore = linescore?.teams?.away?.runs ?? 0;
+  const homeScore = linescore?.teams?.home?.runs ?? 0;
+
   return (
-    <div className="app">
-      <ScoreHeader linescore={linescore} game={game} />
+    <div style={{ padding: 20, color: "white", background: "#0b0b0b", minHeight: "100vh" }}>
+      
+      {/* HEADER */}
+      <h2>
+        {isFinal
+          ? "FINAL"
+          : `${inningState} ${inning} | ${outs} Outs`}
+      </h2>
 
-      <GameState
-        linescore={linescore}
-        count={currentPlay?.count}
-      />
+      {/* SCORE */}
+      <h1>
+        {away} {awayScore} - {homeScore} {home}
+      </h1>
 
-      <LastPitch play={currentPlay} />
+      {/* LAST PLAY */}
+      {lastPlay && (
+        <>
+          <h3>Last Play</h3>
+          <p>{lastPlay.result.description}</p>
+        </>
+      )}
 
-      <BatterPitcher matchup={currentPlay?.matchup} />
-
-      <WinProbability />
-
-      <BaseDiamond offense={linescore.offense} />
-
-      <PlayByPlay allPlays={plays.allPlays} />
+      {/* DEBUG (optional) */}
+      <div style={{ marginTop: 20, fontSize: 12, opacity: 0.6 }}>
+        Plays: {plays.length}
+      </div>
     </div>
   );
 }

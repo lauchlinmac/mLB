@@ -1,49 +1,38 @@
-const BASE_URL = "https://statsapi.mlb.com/api/v1";
+// src/API.js
 
-// 🔥 Use a proxy fallback if direct fails
-async function safeFetch(url) {
+const SCOREBOARD_URL =
+  "https://statsapi.mlb.com/api/v1/schedule?sportId=1&hydrate=team,linescore";
+
+export async function fetchGames() {
   try {
-    const res = await fetch(url);
-
-    if (!res.ok) throw new Error("Direct failed");
-
-    return await res.json();
-  } catch (err) {
-    console.warn("Direct fetch failed, using proxy...");
-
-    // fallback proxy
-    const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-
-    const res = await fetch(proxy);
+    const res = await fetch(SCOREBOARD_URL);
 
     if (!res.ok) {
-      throw new Error("Proxy also failed");
+      throw new Error(`HTTP ${res.status}`);
     }
 
-    return await res.json();
-  }
-}
-
-export async function fetchTodayGames() {
-  try {
-    const data = await safeFetch(
-      `${BASE_URL}/schedule?sportId=1`
-    );
+    const data = await res.json();
 
     return data?.dates?.[0]?.games || [];
   } catch (err) {
-    console.error("Schedule error:", err);
+    console.error("API ERROR:", err);
     return [];
   }
 }
 
-export async function fetchGameData(gamePk) {
+export async function fetchLiveGame(gamePk) {
   try {
-    return await safeFetch(
-      `${BASE_URL}/game/${gamePk}/feed/live`
+    const res = await fetch(
+      `https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`
     );
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+
+    return await res.json();
   } catch (err) {
-    console.error("Game fetch error:", err);
+    console.error("LIVE GAME ERROR:", err);
     return null;
   }
 }

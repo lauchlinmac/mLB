@@ -1,41 +1,22 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { fetchTodayGames, fetchGameData } from "./api";
 
 export default function App() {
-  const [gamePk, setGamePk] = useState(null);
   const [gameData, setGameData] = useState(null);
   const [error, setError] = useState(null);
-  const intervalRef = useRef(null);
 
-  // ✅ STEP 1: JUST PICK A GAME (no validation)
   useEffect(() => {
     const init = async () => {
       const games = await fetchTodayGames();
 
       if (!games.length) {
-        setError("No games today");
+        setError("No games found");
         return;
       }
 
-      // Prefer live, else first game
-      const game =
-        games.find(g => g.status.detailedState === "In Progress") ||
-        games[0];
+      const game = games[0]; // just grab first
 
-      console.log("Using gamePk:", game.gamePk);
-
-      setGamePk(game.gamePk);
-    };
-
-    init();
-  }, []);
-
-  // ✅ STEP 2: FETCH DATA
-  useEffect(() => {
-    if (!gamePk) return;
-
-    const load = async () => {
-      const data = await fetchGameData(gamePk);
+      const data = await fetchGameData(game.gamePk);
 
       if (!data) {
         setError("Failed to load game data");
@@ -45,58 +26,24 @@ export default function App() {
       setGameData(data);
     };
 
-    load();
+    init();
+  }, []);
 
-    intervalRef.current = setInterval(load, 5000);
-
-    return () => clearInterval(intervalRef.current);
-  }, [gamePk]);
-
-  // ERROR
   if (error) {
-    return (
-      <div style={{ color: "red", padding: 20 }}>
-        ERROR: {error}
-      </div>
-    );
+    return <div style={{ color: "red" }}>{error}</div>;
   }
 
-  // LOADING
   if (!gameData) {
-    return (
-      <div style={{ color: "white", padding: 20 }}>
-        Loading game...
-      </div>
-    );
+    return <div style={{ color: "white" }}>Loading...</div>;
   }
 
-  const linescore = gameData.liveData?.linescore;
-  const plays = gameData.liveData?.plays?.allPlays || [];
-  const lastPlay = plays.length ? plays[plays.length - 1] : null;
-
-  const away = gameData.gameData?.teams?.away?.abbreviation || "AWAY";
-  const home = gameData.gameData?.teams?.home?.abbreviation || "HOME";
-
-  const awayScore = linescore?.teams?.away?.runs ?? "-";
-  const homeScore = linescore?.teams?.home?.runs ?? "-";
-
-  const status = gameData.gameData?.status?.detailedState;
+  const away = gameData.gameData.teams.away.abbreviation;
+  const home = gameData.gameData.teams.home.abbreviation;
 
   return (
-    <div style={{ padding: 20, color: "white", background: "#0b0b0b", minHeight: "100vh" }}>
-      
-      <h2>{status || "Loading status..."}</h2>
-
-      <h1>
-        {away} {awayScore} - {homeScore} {home}
-      </h1>
-
-      {lastPlay && (
-        <>
-          <h3>Last Play</h3>
-          <p>{lastPlay.result.description}</p>
-        </>
-      )}
+    <div style={{ color: "white", padding: 20 }}>
+      <h1>{away} vs {home}</h1>
+      <p>{gameData.gameData.status.detailedState}</p>
     </div>
   );
 }

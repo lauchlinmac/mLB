@@ -30,7 +30,9 @@ export default function App() {
   }, []);
 
   if (!game) return <div className="loading">Loading Beast Mode...</div>;
-
+if (gameData.gameData.status.detailedState === "Final") {
+  setGameOver(true);
+}
   const live = game.liveData;
   const linescore = live.linescore;
   const plays = live.plays;

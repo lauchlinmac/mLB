@@ -1,6 +1,5 @@
 const BASE_URL = "https://statsapi.mlb.com/api/v1";
 
-// Get today's schedule
 export async function fetchTodayGames() {
   try {
     const res = await fetch(`${BASE_URL}/schedule?sportId=1`);
@@ -12,22 +11,20 @@ export async function fetchTodayGames() {
   }
 }
 
-// Validate a game feed (avoids 404)
-export async function fetchValidGameFeed(gamePk) {
+export async function fetchGameData(gamePk) {
   try {
     const res = await fetch(
       `${BASE_URL}/game/${gamePk}/feed/live`
     );
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error("Bad response:", res.status);
+      return null;
+    }
 
-    const data = await res.json();
-
-    // Must have core fields
-    if (!data?.gameData || !data?.liveData) return null;
-
-    return data;
-  } catch {
+    return await res.json();
+  } catch (err) {
+    console.error("Fetch error:", err);
     return null;
   }
 }

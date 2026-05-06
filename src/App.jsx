@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { fetchTodayGames, tryFetchGame } from "./api";
+import { fetchTodayGames, fetchValidGameFeed } from "./api";
 
 export default function App() {
   const [gameData, setGameData] = useState(null);
@@ -8,7 +8,7 @@ export default function App() {
   const [isFinal, setIsFinal] = useState(false);
   const intervalRef = useRef(null);
 
-  // ✅ Find a VALID game that actually works
+  // 🔍 STEP 1: Find a VALID game
   useEffect(() => {
     const init = async () => {
       const games = await fetchTodayGames();
@@ -18,14 +18,15 @@ export default function App() {
         return;
       }
 
-      // Try games in priority order
-      const priorityGames = [
+      // Priority: live → scheduled → final
+      const sorted = [
         ...games.filter(g => g.status.detailedState === "In Progress"),
+        ...games.filter(g => g.status.detailedState === "Scheduled"),
         ...games
       ];
 
-      for (const g of priorityGames) {
-        const data = await tryFetchGame(g.gamePk);
+      for (const g of sorted) {
+        const data = await fetchValidGameFeed(g.gamePk);
 
         if (data) {
           setGamePk(g.gamePk);
@@ -34,20 +35,20 @@ export default function App() {
         }
       }
 
-      setError("No playable game feed available");
+      setError("No valid game feed found");
     };
 
     init();
   }, []);
 
-  // ✅ Poll once we have a valid game
+  // 🔄 STEP 2: Poll updates
   useEffect(() => {
     if (!gamePk) return;
 
     const load = async () => {
-      const data = await tryFetchGame(gamePk);
+      const data = await fetchValidGameFeed(gamePk);
 
-      if (!data) return; // don't kill UI
+      if (!data) return;
 
       setGameData({ ...data });
 
@@ -64,7 +65,7 @@ export default function App() {
     return () => clearInterval(intervalRef.current);
   }, [gamePk]);
 
-  // ERROR
+  // 🚨 ERROR
   if (error) {
     return (
       <div style={{ color: "red", padding: 20 }}>
@@ -73,7 +74,7 @@ export default function App() {
     );
   }
 
-  // LOADING
+  // ⏳ LOADING
   if (!gameData) {
     return (
       <div style={{ color: "white", padding: 20 }}>

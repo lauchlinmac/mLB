@@ -1,25 +1,113 @@
+/* src/App.css */
+
 body {
   margin: 0;
-  background: #08131f;
+  background: #021427;
   color: white;
-  font-family: Arial;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 .app {
   padding: 20px;
+  max-width: 900px;
+  margin: auto;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  font-size: 42px;
+  margin: 0;
+  font-weight: 800;
+}
+
+.games-container {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.game-card {
+  background: #08203a;
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+  transition: transform 0.2s ease;
+}
+
+.game-card:hover {
+  transform: scale(1.01);
+}
+
+.teams {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.team-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.team-name {
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.score {
+  font-size: 42px;
+  font-weight: 900;
+}
+
+.game-info {
+  margin-top: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status {
+  font-size: 20px;
+  font-weight: 700;
+  color: #4ade80;
+}
+
+.count {
+  font-size: 18px;
+  opacity: 0.9;
+}
+
+.start-time {
+  font-size: 18px;
+  color: #93c5fd;
 }
 
 .loading {
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32px;
+  font-size: 26px;
+  text-align: center;
+  margin-top: 60px;
 }
 
-.game {
-  background: #132033;
-  margin-bottom: 12px;
-  padding: 16px;
-  border-radius: 12px;
+@media (max-width: 700px) {
+  .team-name {
+    font-size: 22px;
+  }
+
+  .score {
+    font-size: 34px;
+  }
+
+  .status,
+  .count,
+  .start-time {
+    font-size: 16px;
+  }
+
+  .header h1 {
+    font-size: 32px;
+  }
 }
